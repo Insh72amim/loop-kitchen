@@ -1,10 +1,21 @@
-const menuHours = require("../models/menuHours");
+const crypto = require("crypto");
+const reports = require("../models/reports");
 
 const getReport = async (req, res, next) => {
     try {
-        results = await menuHours.find().limit(10);
-        console.log("results : ", results);
-        res.send(results);
+        const reportId = crypto.randomBytes(15).toString("hex");
+        const reqData = {
+            reportId,
+            reportStatus: "Running",
+        };
+
+        await reports.create(reqData);
+        const response = {
+            success: true,
+            message: "Report generation has started!",
+            data: reqData,
+        };
+        res.status(200).send(response);
     } catch (err) {
         console.error("Error appeared in get report controller", err);
     }
