@@ -1,18 +1,24 @@
-const crypto = require("crypto");
+const { isEmpty } = require("lodash");
 const reports = require("../models/reports");
 
 const getReport = async (req, res, next) => {
     try {
-        const reportId = crypto.randomBytes(15).toString("hex");
-        const reqData = {
-            reportId,
-            reportStatus: "Running",
-        };
+        const reportId = req.params.reportId;
+        const report = await reports.find({ reportId: reportId });
+        const reqData = {};
 
-        await reports.create(reqData);
+        if (isEmpty(report))
+            reqData["reportMessage"] = "No Such report is in progress";
+        else {
+            reqData["reportId"] = report[0].reportId;
+            reqData["reportStatus"] = report[0].reportStatus;
+            reqData["createdAt"] = report[0].createdAt;
+            reqData["updatedAt"] = report[0].updatedAt;
+        }
+
         const response = {
             success: true,
-            message: "Report generation has started!",
+            message: "Report generation details.",
             data: reqData,
         };
         res.status(200).send(response);

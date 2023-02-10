@@ -1,24 +1,22 @@
-const { isEmpty } = require("lodash");
+const crypto = require("crypto");
 const reports = require("../models/reports");
+const { reportGen } = require("../services/reportGen");
+const EventEmitter = require("events");
+const reportEmitter = new EventEmitter();
 
 const triggerReport = async (req, res, next) => {
     try {
-        const reportId = req.params.reportId;
-        const report = await reports.find({ reportId: reportId });
-        const reqData = {};
+        const reportId = crypto.randomBytes(15).toString("hex");
+        const reqData = {
+            reportId,
+            reportStatus: "Running",
+        };
 
-        if (isEmpty(report))
-            reqData["reportMessage"] = "No Such report is in progress";
-        else {
-            reqData["reportId"] = report[0].reportId;
-            reqData["reportStatus"] = report[0].reportStatus;
-            reqData["createdAt"] = report[0].createdAt;
-            reqData["updatedAt"] = report[0].updatedAt;
-        }
-
+        reportEmitter.emit("event", reportId);
+        await reports.create(reqData);
         const response = {
             success: true,
-            message: "Report generation details.",
+            message: "Report generation has started!",
             data: reqData,
         };
         res.status(200).send(response);
@@ -26,6 +24,11 @@ const triggerReport = async (req, res, next) => {
         console.error("Error appeared in trigger report controller", err);
     }
 };
+
+reportEmitter.on("event", async (reportId) => {
+    console.log("Event Triggered !!!");
+    await reportGen(reportId);
+});
 
 module.exports = {
     triggerReport,
